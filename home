@@ -1,0 +1,948 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <title>Предсказание</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <style>
+    * { box-sizing: border-box; }
+
+    html {
+      overflow-y: scroll; /* всегда есть место под скролл, не дёргает страницу */
+    }
+
+    :root {
+      --card-radius: 24px; /* единый радиус для карт и гифок */
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #fff;
+      color: #111;
+    }
+
+    .btn-main {
+      padding: 12px 26px;
+      border-radius: 999px;
+      border: none;
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      cursor: pointer;
+      background: #111;
+      color: #fff;
+      transition: transform 0.12s ease, opacity 0.2s ease;
+    }
+    .btn-main:hover { transform: translateY(-1px); }
+    .btn-main:active { transform: translateY(1px); }
+
+    .screen {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+    }
+    .screen.active { display: flex; }
+    #startScreen { z-index: 10; }
+
+    .start-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0;           /* отступы задаём через margin */
+      padding: 16px;
+    }
+
+    .hero-frame {
+      max-height: 650px;
+      max-width: 520px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--card-radius);
+    }
+
+    .hero-frame img {
+      display: block;
+      max-height: 650px;
+      max-width: 100%;
+      height: auto;
+      width: auto;
+      border-radius: var(--card-radius);
+    }
+
+    .author-line {
+      width: 100%;
+      max-width: 520px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    /* отступ от ссылки до анимации */
+    .start-content .author-line {
+      margin-bottom: 16px;
+    }
+
+    /* отступ от анимации до кнопки в 3 раза больше (48px) */
+    .start-content .hero-frame {
+      margin-bottom: 30px;
+    }
+
+    .author-line-reading {
+      max-width: 320px; /* под ширину блока с картой */
+    }
+
+    /* автор карты по умолчанию невидим, но место занимает */
+    #authorLineReadingWrapper {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .author-link {
+      font-size: 0.8rem;
+      color: #777;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .author-link:hover { color: #555; }
+
+    .reading-center {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .reading-stack {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px; /* тот же базовый шаг */
+    }
+
+    .card-wrapper {
+      position: relative;
+      width: 320px;
+      max-width: 100%;
+      height: 420px;
+    }
+
+    .card-wrapper::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 260px;
+      height: 40px;
+      transform: translate(-50%, 110px);
+      background: radial-gradient(ellipse at center,
+        rgba(0,0,0,0.12) 0,
+        rgba(0,0,0,0) 70%);
+      pointer-events: none;
+      filter: blur(5px);
+    }
+
+    .card-area {
+      position: absolute;
+      inset: 0;
+      cursor: pointer;
+    }
+
+    .card {
+      width: 240px;
+      height: 360px;
+      border-radius: var(--card-radius);
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      user-select: none;
+      transition: transform 0.24s ease-in-out, opacity 0.24s ease-in-out;
+      overflow: hidden;
+      will-change: transform, opacity;
+      background: transparent;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: 12px;
+      width: 70%;
+      height: 18px;
+      transform: translateX(-50%) scaleX(1);
+      background: rgba(0,0,0,0.15);
+      filter: blur(8px);
+      border-radius: 999px;
+      pointer-events: none;
+      opacity: 1;
+      transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+    }
+
+    .card-final.card-zoom::before {
+      transform: translateX(-50%) scaleX(1.35) scaleY(1.1);
+      opacity: 1;
+    }
+
+    .card-landing::before {
+      transform: translateX(-50%) scaleX(0.95) scaleY(0.95);
+      opacity: 1;
+    }
+
+    @keyframes shadow-flip {
+      0%   { transform: translateX(-50%) scaleX(1.35) scaleY(1.1); }
+      50%  { transform: translateX(-50%) scaleX(0.05) scaleY(0.6); }
+      100% { transform: translateX(-50%) scaleX(1.35) scaleY(1.1); }
+    }
+
+    .card-shadow-flip::before {
+      animation: shadow-flip 0.5s ease-in-out;
+    }
+
+    .card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      transition: transform 0.5s ease;
+      will-change: transform;
+      z-index: 1;
+    }
+
+    .card-face {
+      position: absolute;
+      inset: 0;
+      border-radius: var(--card-radius);
+      backface-visibility: hidden;
+    }
+
+    .card-back {
+      background-image: url("https://maieuticaio.github.io/folder/experiments/bgcards2.png");
+      background-size: cover;
+      background-position: center;
+    }
+
+    .card-front {
+      background: #e0e0e0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.6rem;
+      font-weight: 600;
+      transform: rotateY(180deg);
+    }
+
+    .card-label { pointer-events: none; }
+
+    .card:not(.flipped) .card-front { visibility: hidden; }
+    .card.flipped .card-inner { transform: rotateY(180deg); }
+
+    .card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 2;
+      background: transparent;
+    }
+
+    .card-pos-top {
+      transform: translate(calc(-50% - 5px), calc(-50% - 5px));
+      z-index: 3;
+      opacity: 1;
+    }
+
+    .card-pos-middle {
+      transform: translate(-50%, -50%);
+      z-index: 2;
+      opacity: 1;
+    }
+
+    .card-pos-bottom {
+      transform: translate(calc(-50% + 5px), calc(-50% + 5px));
+      z-index: 1;
+      opacity: 0.95;
+    }
+
+    /* серые тени для дальних рубашек */
+    .card-pos-middle::after { background: rgba(255,255,255,0.1); }
+    .card-pos-bottom::after { background: rgba(255,255,255,0.2); }
+
+    .card-out {
+      transform: translate(calc(-50% - 8px), calc(-50% - 8px));
+      opacity: 0;
+    }
+
+    .card-final {
+      transform: translate(calc(-50% - 5px), calc(-50% - 30px));
+      z-index: 3;
+      opacity: 1;
+    }
+
+    .card-final.card-zoom {
+      transform: translate(calc(-50% - 5px), calc(-50% - 30px)) scale(1.2);
+    }
+
+    .card-landing {
+      transition: transform 0.16s ease-out, opacity 0.2s ease-in-out;
+    }
+
+    .card-fan {
+      left: 50%;
+      top: 50%;
+      transform-origin: 50% 100%;
+    }
+
+    .card-fan-1 {
+      transform: translate(-50%, -50%) translateX(-30px) rotate(-18deg);
+      z-index: 1;
+    }
+
+    .card-fan-2 {
+      transform: translate(-50%, -50%) translateX(20px) rotate(-6deg);
+      z-index: 2;
+    }
+
+    .card-fan-3 {
+      transform: translate(-50%, -50%) translateX(70px) rotate(6deg);
+      z-index: 3;
+    }
+
+    @media (max-width: 480px) {
+      .card-wrapper {
+        width: 280px;
+        height: 380px;
+      }
+      .card {
+        width: 210px;
+        height: 315px;
+      }
+      .card-fan-1 {
+        transform: translate(-50%, -50%) translateX(-20px) rotate(-16deg);
+      }
+      .card-fan-2 {
+        transform: translate(-50%, -50%) translateX(15px) rotate(-6deg);
+      }
+      .card-fan-3 {
+        transform: translate(-50%, -50%) translateX(50px) rotate(6deg);
+      }
+    }
+
+    /* серые тени и в веере */
+    .card-fan-shadow-bottom::after { background: rgba(66,51,113,0.3); }
+    .card-fan-shadow-middle::after { background: rgba(66,51,113,0.15); }
+    .card-fan-shadow-top::after    { background: transparent; }
+
+    .below {
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      margin-top: -30px;
+      width: 100%;
+      max-width: 320px;
+      text-align: center;
+    }
+
+    .hint {
+      font-size: 1rem;
+      line-height: 1.5;
+      color: #222;
+      opacity: 0;
+      margin-top: 50px;
+      transition: opacity 0.3s ease;
+    }
+
+    #prediction {
+      min-height: 3.5em;
+      font-size: 1rem;
+      line-height: 1.5;
+      color: #222;
+      opacity: 0;
+      margin-top: -80px;
+      transition: opacity 0.3s ease;
+    }
+
+    .restart {
+      margin-top: 18px;
+      display: flex;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      justify-content: center;
+    }
+
+    .restart-drop {
+      position: relative;
+      width: 36px;
+      height: 64px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      outline: none;
+      transition: transform 0.12s ease;
+    }
+
+    .restart-drop:hover  { transform: translateY(-1px); }
+    .restart-drop:active { transform: translateY(1px) scale(0.97); }
+
+    .restart-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      fill: #000;
+      pointer-events: none;
+    }
+
+    .restart-arrow {
+      position: relative;
+      color: #fff;
+      font-size: 16px;
+      line-height: 1;
+      pointer-events: none;
+      transform: translateY(3px);
+      z-index: 1;
+    }
+  </style>
+</head>
+<body>
+  <div id="startScreen" class="screen active">
+    <div class="start-content">
+      <!-- ссылка автора анимации -->
+      <div class="author-line">
+        <!-- CHANGED: добавлен id и убран onclick -->
+        <a id="heroAuthorLink"
+           href="#"
+           class="author-link"
+           target="_blank"
+           rel="noopener">Galka Gadalka</a>
+      </div>
+      <div class="hero-frame">
+        <img src="https://maieuticaio.github.io/folder/experiments/main1.gif" alt="main animation">
+      </div>
+      <button id="startButton" class="btn-main">Получить предсказание</button>
+    </div>
+  </div>
+
+  <div id="readingScreen" class="screen">
+    <div class="reading-center">
+      <div class="reading-stack">
+        <!-- ссылка автора карты (всегда в потоке, но сначала невидима) -->
+        <div class="author-line author-line-reading" id="authorLineReadingWrapper">
+          <a id="authorLinkReading" href="#" class="author-link" target="_blank" rel="noopener">имя автора карты</a>
+        </div>
+
+        <div class="card-wrapper">
+          <div class="card-area" id="cardArea">
+            <div class="card card-pos-top" id="cardTop">
+              <div class="card-inner">
+                <div class="card-face card-back"></div>
+                <div class="card-face card-front">
+                  <span class="card-label">?</span>
+                </div>
+              </div>
+            </div>
+            <div class="card card-pos-middle" id="cardMid">
+              <div class="card-inner">
+                <div class="card-face card-back"></div>
+                <div class="card-face card-front">
+                  <span class="card-label">?</span>
+                </div>
+              </div>
+            </div>
+            <div class="card card-pos-bottom" id="cardBottom">
+              <div class="card-inner">
+                <div class="card-face card-back"></div>
+                <div class="card-face card-front">
+                  <span class="card-label">?</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="below">
+            <div id="hint" class="hint">Вытяни карту</div>
+            <div id="prediction"></div>
+            <div id="restart" class="restart">
+              <button id="restartButton" class="restart-drop" type="button" aria-label="Начать заново">
+                <svg class="restart-svg" viewBox="0 0 40 64" aria-hidden="true">
+                  <path d="M20 0
+                           C 30 16, 38 28, 38 40
+                           C 38 54, 30 64, 20 64
+                           C 10 64, 2 54, 2 40
+                           C 2 28, 10 16, 20 0 Z" />
+                </svg>
+                <span class="restart-arrow">&lt;</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const totalCards = 32;
+
+    const predictions = {
+      1: "Твое предсказание.Твое предсказание.Твое предсказание.Твое предсказание.Твое предсказание.Твое предсказание.Твое предсказание.Твое предсказание.",
+      2: "Твое предсказание.Твое предсказание.Твое предсказание.Твое предсказание.Твое предсказание.Твое предсказание.",
+      3: "Твое предсказание.Твое предсказание.Твое предсказание.Твое предсказание.Твое предсказание.Твое предсказание.Твое предсказание.",
+      4: "Твое предсказание.Твое предсказание.Твое предсказание.Твое предсказание.Твое предсказание.Твое предсказание.Твое предсказание.Твое предсказание.",
+      5: "Твое предсказание.Твое предсказание.Твое предсказание.Твое предсказание.Твое предсказание.Твое предсказание.Твое предсказание.",
+      6: "Твое предсказание.Твое предсказание.Твое предсказание.Твое предсказание.Твое предсказание.Твое предсказание.",
+      7: "Твое предсказание.Твое предсказание.Твое предсказание.Твое предсказание.Твое предсказание.Твое предсказание.Твое предсказание.",
+      8: "Твое предсказание.Твое предсказание.Твое предсказание.Твое предсказание.Твое предсказание.Твое предсказание.Твое предсказание.",
+      9: "Твое предсказание.Твое предсказание.Твое предсказание.Твое предсказание.Твое предсказание.Твое предсказание.",
+      10: "Твое предсказание.Твое предсказание.Твое предсказание.Твое предсказание.Твое предсказание.Твое предсказание.",
+      11: "Твое предсказание.Твое предсказание.Твое предсказание.Твое предсказание.Твое предсказание.Твое предсказание.",
+      12: "Твое предсказание.",
+      13: "Твое предсказание.",
+      14: "Твое предсказание.",
+      15: "Твое предсказание.",
+      16: "Твое предсказание.",
+      17: "Твое предсказание.",
+      18: "Твое предсказание.",
+      19: "Твое предсказание.",
+      20: "Твое предсказание.",
+      21: "Сюрприз.",
+      22: "Твое предсказание.",
+      23: "Твое предсказание.",
+      24: "Твое предсказание.",
+      25: "Твое предсказание.",
+      26: "Твое предсказание.",
+      27: "Твое предсказание.",
+      28: "Твое предсказание.",
+      29: "Твое предсказание.",
+      30: "Твое предсказание.",
+      31: "Твое предсказание.",
+      32: "Твое предсказание."
+    };
+
+    // URL каждой карты
+    const cardLinks = {
+      1: "https://example.com/card1",
+      2: "https://example.com/card2",
+      3: "https://example.com/card3",
+      4: "https://example.com/card4",
+      5: "https://example.com/card5",
+      6: "https://example.com/card6",
+      7: "https://example.com/card7",
+      8: "https://example.com/card8",
+      9: "https://example.com/card9",
+      10: "https://example.com/card10",
+      11: "https://example.com/card11",
+      12: "https://example.com/card12",
+      13: "https://example.com/card13",
+      14: "https://example.com/card14",
+      15: "https://example.com/card15",
+      16: "https://example.com/card16",
+      17: "https://example.com/card17",
+      18: "https://example.com/card18",
+      19: "https://example.com/card19",
+      20: "https://example.com/card20",
+      21: "https://example.com/card21",
+      22: "https://example.com/card22",
+      23: "https://example.com/card23",
+      24: "https://example.com/card24",
+      25: "https://example.com/card25",
+      26: "https://example.com/card26",
+      27: "https://example.com/card27",
+      28: "https://example.com/card28",
+      29: "https://example.com/card29",
+      30: "https://example.com/card30",
+      31: "https://example.com/card31",
+      32: "https://example.com/card32"
+    };
+
+    // Имена авторов для каждой карты
+    const cardAuthors = {
+      1: "Автор Kарты 1",
+      2: "Автор карты 2",
+      3: "Автор карты 3",
+      4: "Автор карты 4",
+      5: "Автор карты 5",
+      6: "Автор карты 6",
+      7: "Автор карты 7",
+      8: "Автор карты 8",
+      9: "Автор карты 9",
+      10: "Автор карты 10",
+      11: "Автор карты 11",
+      12: "Автор карты 12",
+      13: "Автор карты 13",
+      14: "Автор карты 14",
+      15: "Автор карты 15",
+      16: "Автор карты 16",
+      17: "Автор карты 17",
+      18: "Автор карты 18",
+      19: "Автор карты 19",
+      20: "Автор карты 20",
+      21: "Автор карты 21",
+      22: "Автор карты 22",
+      23: "Автор карты 23",
+      24: "Автор карты 24",
+      25: "Автор карты 25",
+      26: "Автор карты 26",
+      27: "Автор карты 27",
+      28: "Автор карты 28",
+      29: "Автор карты 29",
+      30: "Автор карты 30",
+      31: "Автор карты 31",
+      32: "Автор карты 32"
+    };
+
+    const startScreen   = document.getElementById("startScreen");
+    const readingScreen = document.getElementById("readingScreen");
+    const startButton   = document.getElementById("startButton");
+
+    const cardTop    = document.getElementById("cardTop");
+    const cardMid    = document.getElementById("cardMid");
+    const cardBottom = document.getElementById("cardBottom");
+    const cardArea   = document.getElementById("cardArea");
+
+    const predictionEl  = document.getElementById("prediction");
+    const restartEl     = document.getElementById("restart");
+    const restartButton = document.getElementById("restartButton");
+    const hintEl        = document.getElementById("hint");
+
+    const authorLinkReading = document.getElementById("authorLinkReading");
+    const authorLineReadingWrapper = document.getElementById("authorLineReadingWrapper");
+
+    const cards = [cardTop, cardMid, cardBottom];
+
+    // === АНИМАЦИИ НА ГЛАВНОЙ ===
+    const heroImg = document.querySelector(".hero-frame img");
+    const heroAuthorLink = document.getElementById("heroAuthorLink"); // NEW
+
+    const animationBaseUrl = "https://maieuticaio.github.io/folder/experiments/main";
+    const totalAnimations = 3; // main1.gif, main2.gif, main3.gif
+    let currentAnimationIndex = 1;
+
+    // NEW: авторы/ссылки для каждой гифки
+    const animationAuthors = {
+      1: { name: "Galka Gadalka", url: "https://example.com/anim1" },
+      2: { name: "Galka Gadalka — версия 2", url: "https://example.com/anim2" },
+      3: { name: "Galka Gadalka — версия 3", url: "https://example.com/anim3" }
+      // можешь поменять имена и ссылки как тебе нужно
+    };
+
+    function updateHeroAnimation() {
+      heroImg.src = animationBaseUrl + currentAnimationIndex + ".gif";
+
+      // NEW: обновляем ссылку автора под конкретную гифку
+      const meta = animationAuthors[currentAnimationIndex];
+      if (meta) {
+        heroAuthorLink.textContent = meta.name || "Автор анимации";
+        if (meta.url) {
+          heroAuthorLink.href = meta.url;
+          heroAuthorLink.style.pointerEvents = "auto";
+        } else {
+          heroAuthorLink.href = "#";
+          heroAuthorLink.style.pointerEvents = "none";
+        }
+      } else {
+        // дефолт, если вдруг нет записи
+        heroAuthorLink.textContent = "Автор анимации";
+        heroAuthorLink.href = "#";
+        heroAuthorLink.style.pointerEvents = "none";
+      }
+    }
+
+    function goToNextAnimation() {
+      currentAnimationIndex++;
+      if (currentAnimationIndex > totalAnimations) {
+        currentAnimationIndex = 1;
+      }
+      updateHeroAnimation();
+    }
+
+    updateHeroAnimation();
+    // === КОНЕЦ БЛОКА С АНИМАЦИЯМИ ===
+
+    let topEl = cardTop;
+    let midEl = cardMid;
+    let bottomEl = cardBottom;
+
+    let deckIndex = 1;
+    let mode = "idle"; // idle | shuffling | fan | revealed
+
+    function setCardNumber(cardElement, num) {
+      cardElement.dataset.num = String(num);
+      const label = cardElement.querySelector(".card-label");
+      if (label) label.textContent = num;
+    }
+
+    function nextNum() {
+      const n = deckIndex;
+      deckIndex++;
+      if (deckIndex > totalCards) deckIndex = 1;
+      return n;
+    }
+
+    function resetCardState(cardElement, positionClass) {
+      cardElement.className = "card " + positionClass;
+      cardElement.style.cursor = "default";
+      cardElement.onclick = null;
+    }
+
+    function clearCardAllClasses(el) {
+      el.className = "card";
+      el.style.cursor = "default";
+      el.onclick = null;
+    }
+
+    function resetAuthorLine() {
+      if (!authorLineReadingWrapper || !authorLinkReading) return;
+      authorLineReadingWrapper.style.opacity = "0";
+      authorLineReadingWrapper.style.visibility = "hidden";
+      authorLineReadingWrapper.style.pointerEvents = "none";
+      authorLinkReading.textContent = "имя автора карты";
+      authorLinkReading.href = "#";
+      authorLinkReading.style.pointerEvents = "none";
+    }
+
+    function resetRestart() {
+      restartEl.style.opacity = "0";
+      restartEl.style.pointerEvents = "none";
+    }
+
+    function initStack() {
+      deckIndex = 1 + Math.floor(Math.random() * totalCards);
+
+      setCardNumber(cardTop, nextNum());
+      setCardNumber(cardMid, nextNum());
+      setCardNumber(cardBottom, nextNum());
+
+      resetCardState(cardTop, "card-pos-top");
+      resetCardState(cardMid, "card-pos-middle");
+      resetCardState(cardBottom, "card-pos-bottom");
+
+      topEl = cardTop;
+      midEl = cardMid;
+      bottomEl = cardBottom;
+
+      topEl.style.opacity = "1";
+      midEl.style.opacity = "1";
+      bottomEl.style.opacity = "0.95";
+
+      resetAuthorLine();
+      resetRestart();
+    }
+
+    function startShuffling() {
+      const stepDelay    = 260;
+      const moveDuration = 240;
+      let remainingSteps = 2;
+
+      mode = "shuffling";
+      hintEl.style.opacity = "0";
+
+      function shuffleStep() {
+        if (remainingSteps <= 0) {
+          showFan();
+          return;
+        }
+
+        topEl.classList.add("card-out");
+
+        setTimeout(() => {
+          const oldTop = topEl;
+
+          clearCardAllClasses(oldTop);
+          clearCardAllClasses(midEl);
+          clearCardAllClasses(bottomEl);
+
+          topEl    = midEl;
+          midEl    = bottomEl;
+          bottomEl = oldTop;
+
+          topEl.style.transition = "";
+          midEl.style.transition = "";
+
+          topEl.classList.add("card-pos-top");
+          midEl.classList.add("card-pos-middle");
+
+          bottomEl.style.transition = "none";
+          bottomEl.classList.add("card-pos-bottom");
+
+          setCardNumber(bottomEl, nextNum());
+
+          topEl.style.opacity = "1";
+          midEl.style.opacity = "1";
+          bottomEl.style.opacity = "0.95";
+
+          void bottomEl.offsetWidth;
+          bottomEl.style.transition = "";
+
+          remainingSteps--;
+          if (remainingSteps > 0) {
+            setTimeout(shuffleStep, stepDelay);
+          } else {
+            setTimeout(showFan, stepDelay);
+          }
+        }, moveDuration);
+      }
+
+      shuffleStep();
+    }
+
+    function showFan() {
+      mode = "fan";
+
+      const used = new Set();
+      const nums = [];
+      while (nums.length < 3) {
+        const n = 1 + Math.floor(Math.random() * totalCards);
+        if (!used.has(n)) {
+          used.add(n);
+          nums.push(n);
+        }
+      }
+
+      setCardNumber(cardTop, nums[0]);
+      setCardNumber(cardMid, nums[1]);
+      setCardNumber(cardBottom, nums[2]);
+
+      cards.forEach(c => {
+        clearCardAllClasses(c);
+        c.style.opacity = "1";
+      });
+
+      cardTop.classList.add("card-fan", "card-fan-1", "card-fan-shadow-bottom");
+      cardMid.classList.add("card-fan", "card-fan-2", "card-fan-shadow-middle");
+      cardBottom.classList.add("card-fan", "card-fan-3", "card-fan-shadow-top");
+
+      hintEl.textContent = "Вытяни карту";
+      hintEl.style.opacity = "0";
+      setTimeout(() => {
+        hintEl.style.opacity = "1";
+      }, 150);
+    }
+
+    function revealCard(cardEl) {
+      if (mode !== "fan") return;
+      mode = "revealed";
+
+      hintEl.style.opacity = "0";
+
+      cards.forEach(c => {
+        if (c !== cardEl) {
+          c.style.transition = "opacity 0.3s ease";
+          c.style.opacity = "0";
+        }
+      });
+
+      const cardNum = parseInt(cardEl.dataset.num, 10) || 1;
+
+      cardEl.classList.remove(
+        "card-fan",
+        "card-fan-1",
+        "card-fan-2",
+        "card-fan-3",
+        "card-fan-shadow-bottom",
+        "card-fan-shadow-middle",
+        "card-fan-shadow-top"
+      );
+      cardEl.classList.add("card-final", "card-zoom");
+
+      setTimeout(() => {
+        cardEl.classList.add("flipped", "card-shadow-flip");
+      }, 320);
+
+      setTimeout(() => {
+        cardEl.classList.add("card-landing");
+        cardEl.classList.remove("card-zoom");
+      }, 900);
+
+      setTimeout(() => {
+        predictionEl.textContent =
+          predictions[cardNum] || "Эта карта пока молчит.";
+        predictionEl.style.opacity = "1";
+
+        // карта после выдачи предсказания никуда не ведёт
+        cardEl.style.cursor = "default";
+        cardEl.onclick = null;
+
+        // ссылка автора
+        if (authorLineReadingWrapper && authorLinkReading) {
+          const url = cardLinks[cardNum];
+          const name = cardAuthors[cardNum] || "имя автора карты";
+
+          authorLineReadingWrapper.style.opacity = "1";
+          authorLineReadingWrapper.style.visibility = "visible";
+          authorLineReadingWrapper.style.pointerEvents = "auto";
+
+          authorLinkReading.textContent = name;
+
+          if (url) {
+            authorLinkReading.href = url;
+            authorLinkReading.style.pointerEvents = "auto";
+          } else {
+            authorLinkReading.href = "#";
+            authorLinkReading.style.pointerEvents = "none";
+          }
+        }
+
+        // кнопка рестарта
+        restartEl.style.opacity = "1";
+        restartEl.style.pointerEvents = "auto";
+
+      }, 950);
+    }
+
+    startButton.addEventListener("click", () => {
+      startScreen.classList.remove("active");
+      readingScreen.classList.add("active");
+
+      predictionEl.textContent = "";
+      predictionEl.style.opacity = "0";
+      hintEl.style.opacity = "0";
+
+      mode = "idle";
+      initStack();
+      startShuffling();
+    });
+
+    restartButton.addEventListener("click", () => {
+      mode = "idle";
+
+      // переключаем анимацию на главной
+      goToNextAnimation();
+
+      readingScreen.classList.remove("active");
+      startScreen.classList.add("active");
+
+      predictionEl.textContent = "";
+      predictionEl.style.opacity = "0";
+      hintEl.textContent = "Вытяни карту";
+      hintEl.style.opacity = "0";
+
+      resetAuthorLine();
+      resetRestart();
+    });
+
+    cardArea.addEventListener("click", (e) => {
+      if (mode !== "fan") return;
+      const cardEl = e.target.closest(".card");
+      if (!cardEl) return;
+      revealCard(cardEl);
+    });
+  </script>
+</body>
+</html>
