@@ -442,7 +442,8 @@
            rel="noopener">Galka Gadalka</a>
       </div>
       <div class="hero-frame">
-        <img src="https://maieuticaio.github.io/folder/experiments/main1.gif" alt="main animation">
+        <!-- сразу ставим новую первую гифку -->
+        <img src="https://predskazaniya.github.io/animations/anim01.gif" alt="main animation">
       </div>
       <button id="startButton" class="btn-main">Получить предсказание</button>
     </div>
@@ -561,18 +562,26 @@
     const heroImg = document.querySelector(".hero-frame img");
     const heroAuthorLink = document.getElementById("heroAuthorLink");
 
-    const animationBaseUrl = "https://maieuticaio.github.io/folder/experiments/main";
-    const totalAnimations = 3;
+    // НОВЫЕ НАСТРОЙКИ АНИМАЦИЙ
+    const animationBaseUrl = "https://predskazaniya.github.io/animations/anim";
+    const totalAnimations = 3; // anim01, anim02, anim03
     let currentAnimationIndex = 1;
 
+    // авторы анимаций по порядковому номеру
     const animationAuthors = {
-      1: { name: "Galka Gadalka",            url: "https://maieuticaio.github.io/#home" },
-      2: { name: "Galka Gadalka", url: "https://maieuticaio.github.io/#home" },
-      3: { name: "Galka Gadalka", url: "https://maieuticaio.github.io/#home" }
+      1: { name: "Galka Gadalka", url: "https://maieuticaio.github.io/#home" },
+      2: { name: "Stefanya Rakcheeva", url: "https://maieuticaio.github.io/#home" },
+      3: { name: "Участник 03", url: "https://maieuticaio.github.io/#home" }
     };
 
+    // форматируем 1 → "01", 2 → "02"
+    function formatIndex(num) {
+      return String(num).padStart(2, "0");
+    }
+
     function updateHeroAnimation() {
-      heroImg.src = animationBaseUrl + currentAnimationIndex + ".gif";
+      // anim01.gif, anim02.gif, anim03.gif
+      heroImg.src = animationBaseUrl + formatIndex(currentAnimationIndex) + ".gif";
 
       const meta = animationAuthors[currentAnimationIndex];
       if (meta) {
@@ -599,6 +608,7 @@
       updateHeroAnimation();
     }
 
+    // первая инициализация
     updateHeroAnimation();
 
     let topEl = cardTop;
