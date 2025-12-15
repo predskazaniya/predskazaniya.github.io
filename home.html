@@ -8,12 +8,14 @@
   <style>
     * { box-sizing: border-box; }
 
-    html {
-      overflow-y: scroll;
-    }
+    html { overflow-y: scroll; }
 
     :root {
       --card-radius: 24px;
+
+      /* управляем нужными отступами централизованно */
+      --author-to-card: 16px; /* ссылка автора → карта */
+      --card-to-text: 24px;    /* карта → текст предсказания */
     }
 
     body {
@@ -56,7 +58,6 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 0;
       padding: 16px;
     }
 
@@ -68,6 +69,7 @@
       align-items: center;
       justify-content: center;
       border-radius: var(--card-radius);
+      margin-bottom: 30px;
     }
 
     .hero-frame img {
@@ -82,28 +84,9 @@
     .author-line {
       width: 100%;
       max-width: 520px;
-      margin: 0 auto;
+      margin: 0 auto 16px;
       display: flex;
       justify-content: center;
-    }
-
-    .start-content .author-line {
-      margin-bottom: 16px;
-    }
-
-    .start-content .hero-frame {
-      margin-bottom: 30px;
-    }
-
-    .author-line-reading {
-      max-width: 320px;
-    }
-
-    #authorLineReadingWrapper {
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
-      transition: opacity 0.3s ease;
     }
 
     .author-link {
@@ -114,9 +97,7 @@
     }
     .author-link:hover { color: #555; }
 
-    #readingScreen {
-      overflow-y: auto;
-    }
+    #readingScreen { overflow-y: auto; }
 
     .reading-center {
       display: flex;
@@ -124,14 +105,27 @@
       justify-content: center;
       width: 100%;
       min-height: 100%;
-      padding: 10px 16px;
+      padding: 24px 16px;
     }
 
     .reading-stack {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 16px; /* отступ ссылка → карта и ниже */
+      gap: 0; /* важно: отступы задаём точечно, без дублей */
+    }
+
+    .author-line-reading { max-width: 320px; }
+
+    #authorLineReadingWrapper {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      margin-bottom: var(--author-to-card); /* ссылка → карта */
+      display: flex;
+      justify-content: center;
+      width: 100%;
     }
 
     .card-wrapper {
@@ -288,14 +282,14 @@
       opacity: 0;
     }
 
-    /* финальная карта: +20% */
+    /* финальная карта */
     .card-final {
       transform: translate(calc(-50% - 5px), calc(-50% + 20px)) scale(1.2);
       z-index: 3;
       opacity: 1;
     }
 
-    /* первая фаза: +30% */
+    /* первая фаза */
     .card-final.card-zoom {
       transform: translate(calc(-50% - 5px), calc(-50% + 20px)) scale(1.3);
     }
@@ -330,7 +324,7 @@
     .card-fan-shadow-top::after    { background: transparent; }
 
     .below {
-      margin-top: 8px;
+      margin-top: 0; /* без дубля */
       width: 100%;
       max-width: 320px;
       text-align: center;
@@ -351,8 +345,11 @@
       line-height: 1.5;
       color: #222;
       opacity: 0;
-      margin-top: 8px;
+      margin-top: var(--card-to-text); /* карта → текст */
       transition: opacity 0.3s ease;
+
+      /* чтобы \n в тексте стали переносами строк */
+      white-space: pre-line;
     }
 
     .restart {
@@ -402,6 +399,12 @@
     }
 
     @media (max-width: 480px) {
+      /* уменьшаем на 1/3 (оставляем 2/3) */
+      :root{
+        --author-to-card: calc(16px * 2 / 3);
+        --card-to-text:   calc(8px  * 2 / 3);
+      }
+
       .card-wrapper {
         width: 336px;
         height: 456px;
@@ -412,17 +415,9 @@
         height: 320px;
       }
 
-      .card-fan-1 {
-        transform: translate(-50%, -50%) translateX(-20px) rotate(-10deg);
-      }
-
-      .card-fan-2 {
-        transform: translate(-50%, -50%) translateX(15px) rotate(-2deg);
-      }
-
-      .card-fan-3 {
-        transform: translate(-50%, -50%) translateX(50px) rotate(6deg);
-      }
+      .card-fan-1 { transform: translate(-50%, -50%) translateX(-20px) rotate(-10deg); }
+      .card-fan-2 { transform: translate(-50%, -50%) translateX(15px)  rotate(-2deg); }
+      .card-fan-3 { transform: translate(-50%, -50%) translateX(50px)  rotate(6deg); }
 
       .reading-center {
         padding-top: 16px;
@@ -441,10 +436,11 @@
            target="_blank"
            rel="noopener">Galka Gadalka</a>
       </div>
+
       <div class="hero-frame">
-        <!-- сразу ставим новую первую гифку -->
         <img src="https://predskazaniya.github.io/animations/anim01.gif" alt="main animation">
       </div>
+
       <button id="startButton" class="btn-main">Получить предсказание</button>
     </div>
   </div>
@@ -461,25 +457,21 @@
             <div class="card card-pos-top" id="cardTop">
               <div class="card-inner">
                 <div class="card-face card-back"></div>
-                <div class="card-face card-front">
-                  <span class="card-label">?</span>
-                </div>
+                <div class="card-face card-front"><span class="card-label">?</span></div>
               </div>
             </div>
+
             <div class="card card-pos-middle" id="cardMid">
               <div class="card-inner">
                 <div class="card-face card-back"></div>
-                <div class="card-face card-front">
-                  <span class="card-label">?</span>
-                </div>
+                <div class="card-face card-front"><span class="card-label">?</span></div>
               </div>
             </div>
+
             <div class="card card-pos-bottom" id="cardBottom">
               <div class="card-inner">
                 <div class="card-face card-back"></div>
-                <div class="card-face card-front">
-                  <span class="card-label">?</span>
-                </div>
+                <div class="card-face card-front"><span class="card-label">?</span></div>
               </div>
             </div>
           </div>
@@ -488,6 +480,7 @@
         <div class="below">
           <div id="hint" class="hint">Вытяни карту</div>
           <div id="prediction"></div>
+
           <div id="restart" class="restart">
             <button id="restartButton" class="restart-drop" type="button" aria-label="Начать заново">
               <svg class="restart-svg" viewBox="0 0 40 64" aria-hidden="true">
@@ -509,14 +502,15 @@
   <script>
     const totalCards = 7;
 
+    // 3 строки: используем \n, а CSS (#prediction { white-space: pre-line; }) покажет переносы
     const predictions = {
-      1: "Твое предсказание 1.",
-      2: "Твое предсказание 2.",
-      3: "Твое предсказание 3.",
-      4: "Твое предсказание 4.",
-      5: "Твое предсказание 5.",
-      6: "Твое предсказание 6.",
-      7: "Твое предсказание 7."
+      1: "Твое предсказание 1.\nВторая строка.\nТретья строка.",
+      2: "Твое предсказание 2.\nВторая строка.\nТретья строка.",
+      3: "Твое предсказание 3.\nВторая строка.\nТретья строка.",
+      4: "Твое предсказание 4.\nВторая строка.\nТретья строка.",
+      5: "Твое предсказание 5.\nВторая строка.\nТретья строка.",
+      6: "Твое предсказание 6.\nВторая строка.\nТретья строка.",
+      7: "Твое предсказание 7.\nВторая строка.\nТретья строка."
     };
 
     const defaultCardImage = "https://predskazaniya.github.io/cards/card1.png";
@@ -557,30 +551,25 @@
     const authorLinkReading = document.getElementById("authorLinkReading");
     const authorLineReadingWrapper = document.getElementById("authorLineReadingWrapper");
 
-    const cards = [cardTop, cardMid, cardBottom];
-
     const heroImg = document.querySelector(".hero-frame img");
     const heroAuthorLink = document.getElementById("heroAuthorLink");
 
-    // НОВЫЕ НАСТРОЙКИ АНИМАЦИЙ
+    // АНИМАЦИИ
     const animationBaseUrl = "https://predskazaniya.github.io/animations/anim";
     const totalAnimations = 3; // anim01, anim02, anim03
     let currentAnimationIndex = 1;
 
-    // авторы анимаций по порядковому номеру
     const animationAuthors = {
       1: { name: "Galka Gadalka", url: "https://maieuticaio.github.io/#home" },
       2: { name: "Stefanya Rakcheeva", url: "https://maieuticaio.github.io/#home" },
       3: { name: "Участник 03", url: "https://maieuticaio.github.io/#home" }
     };
 
-    // форматируем 1 → "01", 2 → "02"
     function formatIndex(num) {
       return String(num).padStart(2, "0");
     }
 
     function updateHeroAnimation() {
-      // anim01.gif, anim02.gif, anim03.gif
       heroImg.src = animationBaseUrl + formatIndex(currentAnimationIndex) + ".gif";
 
       const meta = animationAuthors[currentAnimationIndex];
@@ -601,15 +590,13 @@
     }
 
     function goToNextAnimation() {
-      currentAnimationIndex++;
-      if (currentAnimationIndex > totalAnimations) {
-        currentAnimationIndex = 1;
-      }
+      currentAnimationIndex = (currentAnimationIndex % totalAnimations) + 1;
       updateHeroAnimation();
     }
 
-    // первая инициализация
     updateHeroAnimation();
+
+    const cards = [cardTop, cardMid, cardBottom];
 
     let topEl = cardTop;
     let midEl = cardMid;
@@ -631,6 +618,11 @@
       return n;
     }
 
+    function clearCardAllClasses(el) {
+      el.className = "card";
+      el.style.cursor = "default";
+    }
+
     function resetCardState(cardElement, positionClass) {
       cardElement.className = "card " + positionClass;
       cardElement.style.cursor = "default";
@@ -638,23 +630,17 @@
 
       const front = cardElement.querySelector(".card-front");
       const label = cardElement.querySelector(".card-label");
-      if (front) {
-        front.style.backgroundImage = "";
-      }
+
+      cardElement.classList.remove("flipped", "card-shadow-flip", "card-landing", "card-zoom");
+
+      if (front) front.style.backgroundImage = "";
       if (label) {
         label.style.display = "";
         label.textContent = "?";
       }
     }
 
-    function clearCardAllClasses(el) {
-      el.className = "card";
-      el.style.cursor = "default";
-      el.onclick = null;
-    }
-
     function resetAuthorLine() {
-      if (!authorLineReadingWrapper || !authorLinkReading) return;
       authorLineReadingWrapper.style.opacity = "0";
       authorLineReadingWrapper.style.visibility = "hidden";
       authorLineReadingWrapper.style.pointerEvents = "none";
@@ -699,7 +685,7 @@
     }
 
     function startShuffling() {
-      const stepDelay    = 260;
+      const stepDelay = 260;
       const moveDuration = 240;
       let remainingSteps = 2;
 
@@ -707,10 +693,7 @@
       hintEl.style.opacity = "0";
 
       function shuffleStep() {
-        if (remainingSteps <= 0) {
-          showFan();
-          return;
-        }
+        if (remainingSteps <= 0) return showFan();
 
         topEl.classList.add("card-out");
 
@@ -721,8 +704,8 @@
           clearCardAllClasses(midEl);
           clearCardAllClasses(bottomEl);
 
-          topEl    = midEl;
-          midEl    = bottomEl;
+          topEl = midEl;
+          midEl = bottomEl;
           bottomEl = oldTop;
 
           topEl.style.transition = "";
@@ -744,11 +727,7 @@
           bottomEl.style.transition = "";
 
           remainingSteps--;
-          if (remainingSteps > 0) {
-            setTimeout(shuffleStep, stepDelay);
-          } else {
-            setTimeout(showFan, stepDelay);
-          }
+          setTimeout(remainingSteps > 0 ? shuffleStep : showFan, stepDelay);
         }, moveDuration);
       }
 
@@ -783,9 +762,7 @@
 
       hintEl.textContent = "Вытяни карту";
       hintEl.style.opacity = "0";
-      setTimeout(() => {
-        hintEl.style.opacity = "1";
-      }, 150);
+      setTimeout(() => { hintEl.style.opacity = "1"; }, 150);
     }
 
     function revealCard(cardEl) {
@@ -806,18 +783,11 @@
       setCardImage(cardEl, cardNum);
 
       const label = cardEl.querySelector(".card-label");
-      if (label) {
-        label.style.display = "none";
-      }
+      if (label) label.style.display = "none";
 
       cardEl.classList.remove(
-        "card-fan",
-        "card-fan-1",
-        "card-fan-2",
-        "card-fan-3",
-        "card-fan-shadow-bottom",
-        "card-fan-shadow-middle",
-        "card-fan-shadow-top"
+        "card-fan","card-fan-1","card-fan-2","card-fan-3",
+        "card-fan-shadow-bottom","card-fan-shadow-middle","card-fan-shadow-top"
       );
       cardEl.classList.add("card-final", "card-zoom");
 
@@ -831,34 +801,28 @@
       }, 900);
 
       setTimeout(() => {
-        predictionEl.textContent =
-          predictions[cardNum] || "Эта карта пока молчит.";
+        predictionEl.textContent = predictions[cardNum] || "Эта карта пока молчит.";
         predictionEl.style.opacity = "1";
 
         cardEl.style.cursor = "default";
         cardEl.onclick = null;
 
-        if (authorLineReadingWrapper && authorLinkReading) {
-          const meta = cardMeta[cardNum] || {};
+        const meta = cardMeta[cardNum] || {};
+        authorLineReadingWrapper.style.opacity = "1";
+        authorLineReadingWrapper.style.visibility = "visible";
+        authorLineReadingWrapper.style.pointerEvents = "auto";
 
-          authorLineReadingWrapper.style.opacity = "1";
-          authorLineReadingWrapper.style.visibility = "visible";
-          authorLineReadingWrapper.style.pointerEvents = "auto";
-
-          authorLinkReading.textContent = meta.name || "имя автора карты";
-
-          if (meta.url) {
-            authorLinkReading.href = meta.url;
-            authorLinkReading.style.pointerEvents = "auto";
-          } else {
-            authorLinkReading.href = "#";
-            authorLinkReading.style.pointerEvents = "none";
-          }
+        authorLinkReading.textContent = meta.name || "имя автора карты";
+        if (meta.url) {
+          authorLinkReading.href = meta.url;
+          authorLinkReading.style.pointerEvents = "auto";
+        } else {
+          authorLinkReading.href = "#";
+          authorLinkReading.style.pointerEvents = "none";
         }
 
         restartEl.style.opacity = "1";
         restartEl.style.pointerEvents = "auto";
-
       }, 950);
     }
 
