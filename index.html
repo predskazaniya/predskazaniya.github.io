@@ -693,7 +693,7 @@ const predictions = {
       const front = cardElement.querySelector(".card-front");
       if (!front) return;
       const url = cardImages[num] || defaultCardImage;
-      front.style.backgroundImage = `url('${url}')`;
+      front.style.backgroundImage = url('${url}');
     }
 
     function startShuffling() {
