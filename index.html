@@ -513,8 +513,7 @@ const predictions = {
   7: "Ты всё был в лесу, а я всё был дома. Уже вечереет, и твой помощник вернулся с добрыми вестями.",
   8: "Отправляйся на поиски живой воды.",
   9: "Хоть тропинка и узка, зато цель уже близка.",
-  10: "Что-то новое нарастает — то, на что пока нет ответа.",
-  11: "Вы застали волчью свадьбу! Свидетелям этого торжества не стоит принимать поспешных решений в любовных делах в предстоящем году."
+  10: "Что-то новое нарастает — то, на что пока нет ответа."
 };
 
     const defaultCardImage = "https://predskazaniya.github.io/cards/card1.png";
@@ -529,7 +528,6 @@ const predictions = {
       8: "https://predskazaniya.github.io/XVI.png",
       9: "https://predskazaniya.github.io/LERON.png",
       10: "https://predskazaniya.github.io/xtramez.png",
-      11: "predskazaniya.github.io/cards/fent.PNG"
     };
 
     const cardMeta = {
@@ -542,8 +540,7 @@ const predictions = {
       7: { name: "Shurikovski", url: "https://vk.ru/shurikovski" },
       8: { name: "XVI", url: "https://t.me/LewisKightXVI" },
       9: { name: "LERON", url: "https://vk.com/leron_art?from=groups" },
-      10: { name: "xtramez", url: "https://t.me/xtramez_illust" },
-      11: { name: "fent", url: "https://vk.ru/fffeeennnttt" }
+      10: { name: "xtramez", url: "https://t.me/xtramez_illust" }
     };
 
     const startScreen   = document.getElementById("startScreen");
@@ -693,7 +690,7 @@ const predictions = {
       const front = cardElement.querySelector(".card-front");
       if (!front) return;
       const url = cardImages[num] || defaultCardImage;
-      front.style.backgroundImage = url('${url}');
+      front.style.backgroundImage = `url('${url}')`;
     }
 
     function startShuffling() {
