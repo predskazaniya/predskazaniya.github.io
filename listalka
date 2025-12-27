@@ -1,0 +1,1083 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <title>Предсказание</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <style>
+    * { box-sizing: border-box; }
+    html { overflow-y: scroll; }
+
+    :root {
+      --card-radius: 24px;
+      --author-to-card: 9px;  /* ссылка автора → карта */
+      --card-to-text:  24px;  /* карта → текст */
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #fff;
+      color: #111;
+    }
+
+    .btn-main {
+      padding: 12px 26px;
+      border-radius: 999px;
+      border: none;
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      cursor: pointer;
+      background: #111;
+      color: #fff;
+      transition: transform 0.12s ease, opacity 0.2s ease;
+    }
+    .btn-main:hover { transform: translateY(-1px); }
+    .btn-main:active { transform: translateY(1px); }
+
+    .screen {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+    }
+    .screen.active { display: flex; }
+
+    #startScreen { z-index: 10; }
+
+    .start-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .hero-frame {
+      max-height: 650px;
+      max-width: 520px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--card-radius);
+      margin-bottom: 30px;
+    }
+
+    .hero-frame img {
+      display: block;
+      max-height: 650px;
+      max-width: 100%;
+      height: auto;
+      width: auto;
+      border-radius: var(--card-radius);
+      cursor: pointer; /* кликабельная анимация */
+    }
+
+    .author-line {
+      width: 100%;
+      max-width: 520px;
+      margin: 0 auto 16px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .author-link {
+      font-size: 1rem;
+      color: #777;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .author-link:hover { color: #555; }
+
+    #readingScreen { overflow-y: auto; }
+
+    .reading-center {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: 100%;
+      padding: 24px 16px;
+    }
+
+    .reading-stack {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0; /* отступы задаём точечно */
+    }
+
+    .author-line-reading { max-width: 320px; }
+
+    #authorLineReadingWrapper {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      margin-bottom: var(--author-to-card);
+      display: flex;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .card-wrapper {
+      position: relative;
+      width: 320px;
+      max-width: 100%;
+      height: 420px;
+    }
+
+    .card-wrapper::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 260px;
+      height: 40px;
+      transform: translate(-50%, 110px);
+      background: radial-gradient(ellipse at center,
+        rgba(0,0,0,0.12) 0,
+        rgba(0,0,0,0) 70%);
+      pointer-events: none;
+      filter: blur(5px);
+    }
+
+    .card-area {
+      position: absolute;
+      inset: 0;
+      cursor: pointer;
+    }
+
+    .card {
+      width: 240px;
+      height: 360px;
+      border-radius: var(--card-radius);
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      user-select: none;
+      transition: transform 0.24s ease-in-out, opacity 0.24s ease-in-out;
+      overflow: hidden;
+      will-change: transform, opacity;
+      background: transparent;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: 12px;
+      width: 70%;
+      height: 18px;
+      transform: translateX(-50%) scaleX(1);
+      background: rgba(0,0,0,0.15);
+      filter: blur(8px);
+      border-radius: 999px;
+      pointer-events: none;
+      opacity: 1;
+      transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+    }
+
+    .card-final.card-zoom::before {
+      transform: translateX(-50%) scaleX(1.35) scaleY(1.1);
+      opacity: 1;
+    }
+
+    .card-landing::before {
+      transform: translateX(-50%) scaleX(0.95) scaleY(0.95);
+      opacity: 1;
+    }
+
+    @keyframes shadow-flip {
+      0%   { transform: translateX(-50%) scaleX(1.35) scaleY(1.1); }
+      50%  { transform: translateX(-50%) scaleX(0.05) scaleY(0.6); }
+      100% { transform: translateX(-50%) scaleX(1.35) scaleY(1.1); }
+    }
+
+    .card-shadow-flip::before {
+      animation: shadow-flip 0.5s ease-in-out;
+    }
+
+    .card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      transition: transform 0.5s ease;
+      will-change: transform;
+      z-index: 1;
+    }
+
+    .card-face {
+      position: absolute;
+      inset: 0;
+      border-radius: var(--card-radius);
+      backface-visibility: hidden;
+    }
+
+    .card-back {
+      background-image: url("https://maieuticaio.github.io/folder/experiments/bgcards2.png");
+      background-size: cover;
+      background-position: center;
+    }
+
+    .card-front {
+      background: #e0e0e0;
+      background-size: cover;
+      background-position: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.6rem;
+      font-weight: 600;
+      transform: rotateY(180deg);
+    }
+
+    .card-label { pointer-events: none; }
+    .card:not(.flipped) .card-front { visibility: hidden; }
+    .card.flipped .card-inner { transform: rotateY(180deg); }
+
+    .card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 2;
+      background: transparent;
+    }
+
+    .card-pos-top {
+      transform: translate(calc(-50% - 5px), calc(-50% - 5px));
+      z-index: 3;
+      opacity: 1;
+    }
+
+    .card-pos-middle {
+      transform: translate(-50%, -50%);
+      z-index: 2;
+      opacity: 1;
+    }
+
+    .card-pos-bottom {
+      transform: translate(calc(-50% + 5px), calc(-50% + 5px));
+      z-index: 1;
+      opacity: 0.95;
+    }
+
+    .card-pos-middle::after { background: rgba(255,255,255,0.1); }
+    .card-pos-bottom::after { background: rgba(255,255,255,0.2); }
+
+    .card-out {
+      transform: translate(calc(-50% - 8px), calc(-50% - 8px));
+      opacity: 0;
+    }
+
+    /* финальная карта */
+    .card-final {
+      transform: translate(calc(-50% - 5px), calc(-50% + 20px)) scale(1.2);
+      z-index: 3;
+      opacity: 1;
+    }
+
+    .card-final.card-zoom {
+      transform: translate(calc(-50% - 5px), calc(-50% + 20px)) scale(1.3);
+    }
+
+    .card-landing {
+      transition: transform 0.16s ease-out, opacity 0.2s ease-in-out;
+    }
+
+    .card-fan {
+      left: 50%;
+      top: 50%;
+      transform-origin: 50% 100%;
+    }
+
+    .card-fan-1 {
+      transform: translate(-50%, -50%) translateX(-30px) rotate(-12deg);
+      z-index: 1;
+    }
+
+    .card-fan-2 {
+      transform: translate(-50%, -50%) translateX(20px) rotate(0deg);
+      z-index: 2;
+    }
+
+    .card-fan-3 {
+      transform: translate(-50%, -50%) translateX(70px) rotate(12deg);
+      z-index: 3;
+    }
+
+    .card-fan-shadow-bottom::after { background: rgba(66,51,113,0.3); }
+    .card-fan-shadow-middle::after { background: rgba(66,51,113,0.15); }
+    .card-fan-shadow-top::after    { background: transparent; }
+
+    .below {
+      margin-top: 0;
+      width: 100%;
+      max-width: 320px;
+      text-align: center;
+    }
+
+    .hint {
+      font-size: 1rem;
+      line-height: 1.5;
+      color: #222;
+      opacity: 0;
+      margin-top: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    #prediction {
+      min-height: 3.5em;
+      font-size: 1rem;
+      line-height: 1.5;
+      color: #222;
+      opacity: 0;
+      margin-top: var(--card-to-text);
+      transition: opacity 0.3s ease;
+      white-space: pre-line;
+      cursor: pointer; /* можно листать и по тексту */
+    }
+
+    .restart {
+      margin-top: 18px;
+      display: flex;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      justify-content: center;
+    }
+
+    .restart-drop {
+      position: relative;
+      width: 36px;
+      height: 64px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      outline: none;
+      transition: transform 0.12s ease;
+    }
+
+    .restart-drop:hover  { transform: translateY(-1px); }
+    .restart-drop:active { transform: translateY(1px) scale(0.97); }
+
+    .restart-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      fill: #000;
+      pointer-events: none;
+    }
+
+    .restart-arrow {
+      position: relative;
+      color: #fff;
+      font-size: 16px;
+      line-height: 1;
+      pointer-events: none;
+      transform: translateY(3px);
+      z-index: 1;
+    }
+
+    @media (max-width: 480px) {
+      :root{
+        --author-to-card: 0px;
+        --card-to-text:   15px;
+      }
+
+      .card-wrapper { width: 336px; height: 456px; }
+      .card { width: 230px; height: 350px; }
+
+      .card-fan-1 { transform: translate(-50%, -50%) translateX(-20px) rotate(-10deg); }
+      .card-fan-2 { transform: translate(-50%, -50%) translateX(15px)  rotate(-2deg); }
+      .card-fan-3 { transform: translate(-50%, -50%) translateX(50px)  rotate(6deg); }
+
+      .reading-center { padding-top: 16px; padding-bottom: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="startScreen" class="screen active">
+    <div class="start-content">
+      <div class="author-line">
+        <a id="heroAuthorLink" href="#" class="author-link" target="_blank" rel="noopener">Автор анимации</a>
+      </div>
+
+      <div class="hero-frame">
+        <img id="heroImg" src="https://predskazaniya.github.io/animations/anim01.gif" alt="main animation">
+      </div>
+
+      <button id="startButton" class="btn-main">Получить предсказание</button>
+    </div>
+  </div>
+
+  <div id="readingScreen" class="screen">
+    <div class="reading-center">
+      <div class="reading-stack">
+        <div class="author-line author-line-reading" id="authorLineReadingWrapper">
+          <a id="authorLinkReading" href="#" class="author-link" target="_blank" rel="noopener">имя автора карты</a>
+        </div>
+
+        <div class="card-wrapper">
+          <div class="card-area" id="cardArea">
+            <div class="card card-pos-top" id="cardTop">
+              <div class="card-inner">
+                <div class="card-face card-back"></div>
+                <div class="card-face card-front"><span class="card-label">?</span></div>
+              </div>
+            </div>
+
+            <div class="card card-pos-middle" id="cardMid">
+              <div class="card-inner">
+                <div class="card-face card-back"></div>
+                <div class="card-face card-front"><span class="card-label">?</span></div>
+              </div>
+            </div>
+
+            <div class="card card-pos-bottom" id="cardBottom">
+              <div class="card-inner">
+                <div class="card-face card-back"></div>
+                <div class="card-face card-front"><span class="card-label">?</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="below">
+          <div id="hint" class="hint">Вытяни карту</div>
+          <div id="prediction"></div>
+
+          <div id="restart" class="restart">
+            <button id="restartButton" class="restart-drop" type="button" aria-label="Начать заново">
+              <svg class="restart-svg" viewBox="0 0 40 64" aria-hidden="true">
+                <path d="M20 0
+                         C 30 16, 38 28, 38 40
+                         C 38 54, 30 64, 20 64
+                         C 10 64, 2 54, 2 40
+                         C 2 28, 10 16, 20 0 Z" />
+              </svg>
+              <span class="restart-arrow">&lt;</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const totalCards = 46;
+
+    const predictions = {
+      1: "Дорога — это всего лишь следы других, но только путник знает, когда приходит время остановиться или повернуть назад.",
+      2: "Долгие годы жизнь течёт неспешно и тихо, но внезапная череда событий меняет реальность вокруг — и меняет нас до неузнаваемости.",
+      3: "Твоя сила расцветает там, где ты остаёшься верен себе.",
+      4: "Посреди ночи ты увидишь объекты на шее белого слона — в небе, в самом сердце неба. Танцы в воздухе, полные радости при лунном свете.",
+      5: "На границе сна и яви ты встретишь существо, которое отдаст тебе на хранение твой собственный страх. Только тебе решать, что с этим делать…",
+      6: "Я должен отворить эту дверь и не смогу ни спать, ни есть, ни сдвинуться с места, пока своими глазами не увижу, что скрыто за ней.",
+      7: "Ты всё был в лесу, а я всё был дома. Уже вечереет, и твой помощник вернулся с добрыми вестями.",
+      8: "Отправляйся на поиски живой воды.",
+      9: "Хоть тропинка и узка, зато цель уже близка.",
+      10:"Что-то новое нарастает — то, на что пока нет ответа.",
+      11:"Ворчание не было недружелюбным, но всё равно оставалось ворчанием.",
+      12:"Смелость протолкнёт тебя на сцену, а навыки и талант помогут в этом приключении.",
+      13:"Там, где не встретить ни души,\nГде дремлют тайны, камыши,\nГде ждал ты мириады лет,\nМоргнёт тебе звезда в ответ.\nИди скорей за нею вслед.",
+      14:"Ты даже не заметишь, как драгоценная застенчивость упорхнёт из твоей души.",
+      15:"Тебя ждут увлекательные беседы и интересные собеседники.",
+      16:"Свет, пройдя все заросли, вернётся на своё место.",
+      17:"Приключения не будут ждать!",
+      18:"Пускай даже высохшие краски создадут искусство.",
+      19:"Ты застал волчью свадьбу! Свидетелям этого торжества не стоит принимать поспешных решений в любовных делах в предстоящем году.",
+      20:"Иногда даже долгий и сложный путь ни к чему не приводит.",
+      21:"Да, ты видишь: здесь происходит немало такого, от чего сердце бьётся сильнее. Но это не страшно, верно?",
+      22:"Радость — идеальный материал для ремонта прохудившегося бытия.",
+      23:"Те, кто будут жить, не теряя веры в чудо, обретут его.",
+      24:"Все твои слёзы сломаются.",
+      25:"Иногда нужно заблудиться, чтобы найти себя.",
+      26:"Ты перестанешь держаться берега и станешь бесстрашным пловцом.",
+      27:"Не забывай про искру внутри тебя.",
+      28:"Всё, что ты видишь, — тень; и ты сам — только тень. А реальности, которые отбрасывают их, живут в какой-то другой стране, озарённой духовным солнцем, которое никогда не заходит.",
+      29:"Самой холодной зимой ты узнаешь, что внутри тебя — непобедимое лето.",
+      30:"Многое мы бы охотно бросили, если бы не боялись, что кто-нибудь это подберёт.",
+      31:"Ты утонешь в ворохе личности и шорохе слов, но в наступившей тишине собственной слабости наконец почувствуешь под собой дно — и только тогда сможешь от него оттолкнуться.",
+      32:"Маринуя прошлое в стеклянной банке, не выйти из тёмного погреба на свет.",
+      33:"И выйдет солнце из-за туч,\nСогреет каменную землю.",
+      34:"Не ищи лучшее — ищи своё.",
+      35:"Мы пришли сюда валять дурака. Никому не позволяй убедить себя в обратном.",
+      36:"Случайно впустишь в дом привидение. Оно не будет мешать, но немножко погремит в полночь.",
+      37:"Выиграешь в борьбе за право тусоваться.",
+      38:"Великан заглянет к тебе в окошко, но пройдёт мимо. У него свои дела!",
+      39:"Карта не найдена. Судьба не отвечает.\nА может быть… всё в твоих руках?\nПеремешай колоду или проверь ментальное соединение.",
+      40:"Будь непреклонным. Раздосадованный крушением планов, не складывай оружия.",
+      41:"Страх сделает тебя пленником. Надежда даст тебе свободу.",
+      42:"И выйдет солнце из-за туч,\nСогреет каменную землю.",
+      43:"Чувство без разума — не слишком питательная еда; но и разум, не смягчённый чувством, — горькая и сухая пища.",
+      44:"Не рычит во мраке ночи лев, и днём не рыкает, и развеется паутина крючкотворства, и рассветёт солнце, под лучами которого встретятся неожиданные друзья.",
+      45:"Каждый твой шаг ведёт к заветной сути, что внутри горит.",
+      46:"wilredar.jpg"
+    };
+
+    const defaultCardImage = "https://predskazaniya.github.io/cards/card1.png";
+    const cardImages = {
+      1:  "https://predskazaniya.github.io/JulieEgorova.png",
+      2:  "https://predskazaniya.github.io/KechyMargo.png",
+      3:  "https://predskazaniya.github.io/LenaKHA.png",
+      4:  "https://predskazaniya.github.io/moorka.png",
+      5:  "https://predskazaniya.github.io/nekot_arts.png",
+      6:  "https://predskazaniya.github.io/Shurikovski1.png",
+      7:  "https://predskazaniya.github.io/Shurikovski2.png",
+      8:  "https://predskazaniya.github.io/XVI.png",
+      9:  "https://predskazaniya.github.io/LERON.png",
+      10: "https://predskazaniya.github.io/xtramez.png",
+      11: "https://predskazaniya.github.io/cards/ASreda13.png",
+      12: "https://predskazaniya.github.io/cards/DanaPlateau.jpg",
+      13: "https://predskazaniya.github.io/cards/DianaB.png",
+      14: "https://predskazaniya.github.io/cards/Levchenko.png",
+      15: "https://predskazaniya.github.io/cards/Lyamina.png",
+      16: "https://predskazaniya.github.io/cards/canciqer.png",
+      17: "https://predskazaniya.github.io/cards/verchickq.png",
+      18: "https://predskazaniya.github.io/cards/dragonocat.PNG",
+      19: "https://predskazaniya.github.io/cards/fent.PNG",
+      20: "https://predskazaniya.github.io/cards/kondrashova.jpg",
+      21: "https://predskazaniya.github.io/cards/kostileva.jpg",
+      22: "https://predskazaniya.github.io/cards/semekhina.PNG",
+      23: "https://predskazaniya.github.io/cards/sotnikova.png",
+      24: "https://predskazaniya.github.io/cards/tears.png",
+      25: "https://predskazaniya.github.io/cards/veronika.png",
+      26: "https://predskazaniya.github.io/cards/yulya.png",
+      27: "https://predskazaniya.github.io/cards/zakharova.png",
+
+      28: "https://predskazaniya.github.io/cards/AloeVeranda.png",
+      29: "https://predskazaniya.github.io/cards/annat.PNG",
+      30: "https://predskazaniya.github.io/cards/Fatima.png",
+      31: "https://predskazaniya.github.io/cards/wilredar.jpg",
+      32: "https://predskazaniya.github.io/cards/gingerbread.jpg",
+      33: "https://predskazaniya.github.io/cards/glagoleva.png",
+      34: "https://predskazaniya.github.io/cards/Grofpel.png",
+      35: "https://predskazaniya.github.io/cards/Grofpel2.png",
+      36: "https://predskazaniya.github.io/cards/jan1el1.png",
+      37: "https://predskazaniya.github.io/cards/jan1el2.png",
+      38: "https://predskazaniya.github.io/cards/jan1el3.png",
+      39: "https://predskazaniya.github.io/cards/KatrinBars.PNG",
+      40: "https://predskazaniya.github.io/cards/olhva.png",
+      41: "https://predskazaniya.github.io/cards/papershinee.png",
+      42: "https://predskazaniya.github.io/cards/shaligina.png",
+      43: "https://predskazaniya.github.io/cards/shulga.png",
+      44: "https://predskazaniya.github.io/cards/Snormaeliu.png",
+      45: "https://predskazaniya.github.io/cards/spoutt.png",
+      46: "https://predskazaniya.github.io/cards/wilredar.jpg"
+    };
+
+    const cardMeta = {
+      1:  { name: "Юля Егорова", url: "https://www.instagram.com/jlgrva?igsh=MXJzYWk4MHF1eWJhNQ==" },
+      2:  { name: "Kechy", url: "https://vk.ru/kechy" },
+      3:  { name: "Lena Khamidullina", url: "https://www.behance.net/Khamidullina" },
+      4:  { name: "moorka", url: "https://linktr.ee/moorka" },
+      5:  { name: "nekot_arts", url: "https://www.instagram.com/nekot_arts" },
+      6:  { name: "Shurikovski", url: "https://t.me/shurikovski_zip" },
+      7:  { name: "Shurikovski", url: "https://vk.ru/shurikovski" },
+      8:  { name: "XVI", url: "https://t.me/LewisKightXVI" },
+      9:  { name: "LERON", url: "https://vk.com/leron_art?from=groups" },
+      10: { name: "xtramez", url: "https://t.me/xtramez_illust" },
+      11: { name: "A.Sreda13", url: "https://t.me/ASreda13" },
+      12: { name: "Dana Plateau", url: "https://www.instagram.com/dana.plateau/" },
+      13: { name: "Диана", url: "https://www.instagram.com/landli9ht/" },
+      14: { name: "Юля Левченко", url: "https://www.instagram.com/yulyama/" },
+      15: { name: "Lyamina Anna", url: "https://t.me/cultura_multuro" },
+      16: { name: "canciqer", url: "https://t.me/canciqer" },
+      17: { name: "verchickq", url: "https://www.instagram.com/verchickq/" },
+      18: { name: "dragonocat", url: "https://t.me/dragonocat1" },
+      19: { name: "fent", url: "https://vk.ru/fffeeennnttt" },
+      20: { name: "мертворыбина", url: "https://t.me/rybadeda" },
+      21: { name: "Альбина", url: "https://t.me/albinytsa" },
+      22: { name: "Маша Семехина", url: "https://t.me/corol_cor" },
+      23: { name: "Лютик", url: "https://t.me/buttercup_flower" },
+      24: { name: "Сломанные слезы", url: "https://t.me/broken_tears" },
+      25: { name: "✷ через тернии к звëздам ✷", url: "https://vk.com/cherez.terniii.k.zvezdam" },
+      26: { name: "Юля", url: "https://t.me/heeyjudehello" },
+      27: { name: "Shurpo", url: "https://t.me/shurpo_art" },
+
+      28: { name: "Aloe Veranda", url: "https://t.me/aloeVeranda" },
+      29: { name: "мышова", url: "https://t.me/myshovaa" },
+      30: { name: "florenceme (glutiam)", url: "https://vk.com/glutiam_art" },
+      31: { name: "wilredar", url: "https://t.me/wilredarius" },
+      32: { name: "gingerbread", url: "https://t.me/gingerb_ead" },
+      33: { name: "Ladislavica", url: "https://t.me/ladislavica" },
+      34: { name: "Natalia Grofpel", url: "https://instagram.com/nataliagrofpel?igshid=YmMyMTA2M2Y=" },
+      35: { name: "Natalia Grofpel", url: "https://instagram.com/nataliagrofpel?igshid=YmMyMTA2M2Y=" },
+      36: { name: "jan1el", url: "https://www.instagram.com/jan1el_art?igsh=cHZ5bWlpbmxnNDZ5&utm_source=qr" },
+      37: { name: "jan1el", url: "https://www.instagram.com/jan1el_art?igsh=cHZ5bWlpbmxnNDZ5&utm_source=qr" },
+      38: { name: "jan1el", url: "https://www.instagram.com/jan1el_art?igsh=cHZ5bWlpbmxnNDZ5&utm_source=qr" },
+      39: { name: "Katrin Bars", url: "https://vk.com/clubkatrinbars" },
+      40: { name: "olhva", url: "https://linktr.ee/olhva_" },
+      41: { name: "papershinee", url: "https://t.me/papershineee" },
+      42: { name: "shaligina.png", url: "#" },
+      43: { name: "Аня Шульга", url: "https://t.me/alienmatter" },
+      44: { name: "Snormælius", url: "https://vk.com/snormaelius" },
+      45: { name: "spoutt", url: "https://t.me/spoutttt" },
+      46: { name: "wilredar.jpg", url: "#" }
+    };
+
+    const startScreen   = document.getElementById("startScreen");
+    const readingScreen = document.getElementById("readingScreen");
+    const startButton   = document.getElementById("startButton");
+
+    const cardTop    = document.getElementById("cardTop");
+    const cardMid    = document.getElementById("cardMid");
+    const cardBottom = document.getElementById("cardBottom");
+    const cardArea   = document.getElementById("cardArea");
+
+    const predictionEl  = document.getElementById("prediction");
+    const restartEl     = document.getElementById("restart");
+    const restartButton = document.getElementById("restartButton");
+    const hintEl        = document.getElementById("hint");
+
+    const authorLinkReading = document.getElementById("authorLinkReading");
+    const authorLineReadingWrapper = document.getElementById("authorLineReadingWrapper");
+
+    const heroImg = document.getElementById("heroImg");
+    const heroAuthorLink = document.getElementById("heroAuthorLink");
+
+    // -----------------------------
+    // АНИМАЦИИ: случайный порядок без повторов, пока не закончатся
+    // -----------------------------
+    const animationBaseUrl = "https://predskazaniya.github.io/animations/anim";
+    const totalAnimations = 8; // anim01..anim08
+
+    const animationAuthors = {
+      1: { name: "Galka Gadalka", url: "https://maieuticaio.github.io/#home" },
+      2: { name: "chiiiizhik", url: "https://t.me/chiiiizhik" },
+      3: { name: "XVI", url: "https://t.me/LewisKightXVI" },
+      4: { name: "verchickq", url: "https://www.instagram.com/verchickq/" },
+      5: { name: "Ольга Мурашова", url: "https://vk.ru/club187872552" },
+      6: { name: "vsimmetry", url: "https://t.me/vsimmetry" },
+      7: { name: "Сломанные слезы", url: "https://t.me/broken_tears" },
+      8: { name: "Katrin Bars", url: "https://vk.com/clubkatrinbars" }
+    };
+
+    function formatIndex(num) {
+      return String(num).padStart(2, "0");
+    }
+
+    let animRemaining = [];
+
+    function refillAnimRemaining() {
+      animRemaining = Array.from({ length: totalAnimations }, (_, i) => i + 1);
+      for (let i = animRemaining.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [animRemaining[i], animRemaining[j]] = [animRemaining[j], animRemaining[i]];
+      }
+    }
+
+    function showAnimation(index) {
+      heroImg.src = animationBaseUrl + formatIndex(index) + ".gif";
+
+      const meta = animationAuthors[index];
+      if (meta) {
+        heroAuthorLink.textContent = meta.name || "Автор анимации";
+        if (meta.url && meta.url !== "#") {
+          heroAuthorLink.href = meta.url;
+          heroAuthorLink.style.pointerEvents = "auto";
+        } else {
+          heroAuthorLink.href = "#";
+          heroAuthorLink.style.pointerEvents = "none";
+        }
+      } else {
+        heroAuthorLink.textContent = "Автор анимации";
+        heroAuthorLink.href = "#";
+        heroAuthorLink.style.pointerEvents = "none";
+      }
+    }
+
+    function nextRandomAnimation() {
+      if (animRemaining.length === 0) refillAnimRemaining();
+      const idx = animRemaining.pop();
+      showAnimation(idx);
+    }
+
+    refillAnimRemaining();
+    nextRandomAnimation();
+
+    heroImg.addEventListener("click", () => {
+      nextRandomAnimation();
+    });
+
+    // -----------------------------
+    // КАРТЫ: "в зачёт" идут только ВЫБРАННЫЕ
+    // -----------------------------
+    let remaining = [];
+
+    function refillRemaining() {
+      remaining = Array.from({ length: totalCards }, (_, i) => i + 1);
+    }
+
+    // 3 для веера: НЕ вынимаем
+    function pickFan3() {
+      if (remaining.length < 3) refillRemaining();
+
+      const pool = remaining.slice();
+      for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+      }
+      return [pool[0], pool[1], pool[2]];
+    }
+
+    // вынимаем выбранную из remaining
+    function consume(num) {
+      const idx = remaining.indexOf(num);
+      if (idx !== -1) remaining.splice(idx, 1);
+    }
+
+    // следующая unseen (случайная) — сразу вынимаем
+    function pickNextUnseen() {
+      if (remaining.length === 0) refillRemaining();
+      const i = Math.floor(Math.random() * remaining.length);
+      const num = remaining[i];
+      remaining.splice(i, 1);
+      return num;
+    }
+
+    refillRemaining();
+
+    // -----------------------------
+    // UI: колода/режимы
+    // -----------------------------
+    const cards = [cardTop, cardMid, cardBottom];
+    let mode = "idle";
+
+    function setCardNumber(cardElement, num) {
+      cardElement.dataset.num = String(num);
+      const label = cardElement.querySelector(".card-label");
+      if (label) label.textContent = num;
+    }
+
+    function clearCardAllClasses(el) {
+      el.className = "card";
+      el.style.cursor = "default";
+    }
+
+    function resetCardState(cardElement, positionClass) {
+      cardElement.className = "card " + positionClass;
+      cardElement.style.cursor = "default";
+      cardElement.onclick = null;
+
+      const front = cardElement.querySelector(".card-front");
+      const label = cardElement.querySelector(".card-label");
+
+      cardElement.classList.remove("flipped", "card-shadow-flip", "card-landing", "card-zoom");
+
+      if (front) front.style.backgroundImage = "";
+      if (label) {
+        label.style.display = "";
+        label.textContent = "?";
+      }
+    }
+
+    function resetAuthorLine() {
+      authorLineReadingWrapper.style.opacity = "0";
+      authorLineReadingWrapper.style.visibility = "hidden";
+      authorLineReadingWrapper.style.pointerEvents = "none";
+      authorLinkReading.textContent = "имя автора карты";
+      authorLinkReading.href = "#";
+      authorLinkReading.style.pointerEvents = "none";
+    }
+
+    function resetRestart() {
+      restartEl.style.opacity = "0";
+      restartEl.style.pointerEvents = "none";
+    }
+
+    function initStack() {
+      const nums = pickFan3(); // НЕ вынимаем из remaining
+
+      setCardNumber(cardTop, nums[0]);
+      setCardNumber(cardMid, nums[1]);
+      setCardNumber(cardBottom, nums[2]);
+
+      resetCardState(cardTop, "card-pos-top");
+      resetCardState(cardMid, "card-pos-middle");
+      resetCardState(cardBottom, "card-pos-bottom");
+
+      cardTop.style.opacity = "1";
+      cardMid.style.opacity = "1";
+      cardBottom.style.opacity = "0.95";
+
+      resetAuthorLine();
+      resetRestart();
+    }
+
+    function setCardImage(cardElement, num) {
+      const front = cardElement.querySelector(".card-front");
+      if (!front) return;
+      const url = cardImages[num] || defaultCardImage;
+      front.style.backgroundImage = `url('${url}')`;
+    }
+
+    // тасовка оставлена как была — только визуал
+    let topEl = cardTop;
+    let midEl = cardMid;
+    let bottomEl = cardBottom;
+
+    function startShuffling() {
+      const stepDelay = 260;
+      const moveDuration = 240;
+      let remainingSteps = 2;
+
+      mode = "shuffling";
+      hintEl.style.opacity = "0";
+
+      function shuffleStep() {
+        if (remainingSteps <= 0) return showFan();
+
+        topEl.classList.add("card-out");
+
+        setTimeout(() => {
+          const oldTop = topEl;
+
+          clearCardAllClasses(oldTop);
+          clearCardAllClasses(midEl);
+          clearCardAllClasses(bottomEl);
+
+          topEl = midEl;
+          midEl = bottomEl;
+          bottomEl = oldTop;
+
+          topEl.style.transition = "";
+          midEl.style.transition = "";
+
+          topEl.classList.add("card-pos-top");
+          midEl.classList.add("card-pos-middle");
+
+          bottomEl.style.transition = "none";
+          bottomEl.classList.add("card-pos-bottom");
+
+          // номер тут чисто для лейбла во время “магии”
+          setCardNumber(bottomEl, 1 + Math.floor(Math.random() * totalCards));
+
+          topEl.style.opacity = "1";
+          midEl.style.opacity = "1";
+          bottomEl.style.opacity = "0.95";
+
+          void bottomEl.offsetWidth;
+          bottomEl.style.transition = "";
+
+          remainingSteps--;
+          setTimeout(remainingSteps > 0 ? shuffleStep : showFan, stepDelay);
+        }, moveDuration);
+      }
+
+      shuffleStep();
+    }
+
+    function showFan() {
+      mode = "fan";
+
+      const nums = pickFan3(); // НЕ вынимаем (важно)
+
+      setCardNumber(cardTop, nums[0]);
+      setCardNumber(cardMid, nums[1]);
+      setCardNumber(cardBottom, nums[2]);
+
+      cards.forEach(c => {
+        clearCardAllClasses(c);
+        c.style.opacity = "1";
+      });
+
+      cardTop.classList.add("card-fan", "card-fan-1", "card-fan-shadow-bottom");
+      cardMid.classList.add("card-fan", "card-fan-2", "card-fan-shadow-middle");
+      cardBottom.classList.add("card-fan", "card-fan-3", "card-fan-shadow-top");
+
+      hintEl.textContent = "Вытяни карту";
+      hintEl.style.opacity = "0";
+      setTimeout(() => { hintEl.style.opacity = "1"; }, 150);
+    }
+
+    function revealDirectSameCard(cardEl, newNum) {
+      mode = "revealed";
+
+      // обновляем номер + картинку
+      setCardNumber(cardEl, newNum);
+      setCardImage(cardEl, newNum);
+
+      // текст
+      predictionEl.textContent = predictions[newNum] || "Эта карта пока молчит.";
+      predictionEl.style.opacity = "1";
+
+      // автор
+      const meta = cardMeta[newNum] || {};
+      authorLineReadingWrapper.style.opacity = "1";
+      authorLineReadingWrapper.style.visibility = "visible";
+      authorLineReadingWrapper.style.pointerEvents = "auto";
+
+      authorLinkReading.textContent = meta.name || "имя автора карты";
+      if (meta.url && meta.url !== "#") {
+        authorLinkReading.href = meta.url;
+        authorLinkReading.style.pointerEvents = "auto";
+      } else {
+        authorLinkReading.href = "#";
+        authorLinkReading.style.pointerEvents = "none";
+      }
+
+      // заново “флип”
+      cardEl.classList.remove("flipped", "card-shadow-flip", "card-landing", "card-zoom");
+      void cardEl.offsetWidth;
+
+      cardEl.classList.add("card-final", "card-zoom");
+
+      setTimeout(() => {
+        cardEl.classList.add("flipped", "card-shadow-flip");
+      }, 60);
+
+      setTimeout(() => {
+        cardEl.classList.add("card-landing");
+        cardEl.classList.remove("card-zoom");
+      }, 520);
+
+      restartEl.style.opacity = "1";
+      restartEl.style.pointerEvents = "auto";
+
+      // кликом по открытой карте — следующая unseen
+      cardEl.style.cursor = "pointer";
+      cardEl.onclick = () => {
+        const nextNum = pickNextUnseen();
+        revealDirectSameCard(cardEl, nextNum);
+      };
+    }
+
+    function revealCard(cardEl) {
+      if (mode !== "fan") return;
+      mode = "revealed";
+
+      hintEl.style.opacity = "0";
+
+      cards.forEach(c => {
+        if (c !== cardEl) {
+          c.style.transition = "opacity 0.3s ease";
+          c.style.opacity = "0";
+        }
+      });
+
+      const cardNum = parseInt(cardEl.dataset.num, 10) || 1;
+
+      // В ЗАЧЁТ ИДЁТ ТОЛЬКО ВЫБРАННАЯ
+      consume(cardNum);
+
+      setCardImage(cardEl, cardNum);
+
+      const label = cardEl.querySelector(".card-label");
+      if (label) label.style.display = "none";
+
+      cardEl.classList.remove(
+        "card-fan","card-fan-1","card-fan-2","card-fan-3",
+        "card-fan-shadow-bottom","card-fan-shadow-middle","card-fan-shadow-top"
+      );
+      cardEl.classList.add("card-final", "card-zoom");
+
+      setTimeout(() => {
+        cardEl.classList.add("flipped", "card-shadow-flip");
+      }, 320);
+
+      setTimeout(() => {
+        cardEl.classList.add("card-landing");
+        cardEl.classList.remove("card-zoom");
+      }, 900);
+
+      setTimeout(() => {
+        predictionEl.textContent = predictions[cardNum] || "Эта карта пока молчит.";
+        predictionEl.style.opacity = "1";
+
+        const meta = cardMeta[cardNum] || {};
+        authorLineReadingWrapper.style.opacity = "1";
+        authorLineReadingWrapper.style.visibility = "visible";
+        authorLineReadingWrapper.style.pointerEvents = "auto";
+
+        authorLinkReading.textContent = meta.name || "имя автора карты";
+        if (meta.url && meta.url !== "#") {
+          authorLinkReading.href = meta.url;
+          authorLinkReading.style.pointerEvents = "auto";
+        } else {
+          authorLinkReading.href = "#";
+          authorLinkReading.style.pointerEvents = "none";
+        }
+
+        restartEl.style.opacity = "1";
+        restartEl.style.pointerEvents = "auto";
+
+        // IMPORTANT: после раскрытия клик по карте = следующая unseen (без веера)
+        cardEl.style.cursor = "pointer";
+        cardEl.onclick = () => {
+          const nextNum = pickNextUnseen();
+          revealDirectSameCard(cardEl, nextNum);
+        };
+      }, 950);
+    }
+
+    function getFinalCardEl() {
+      if (cardTop.classList.contains("card-final")) return cardTop;
+      if (cardMid.classList.contains("card-final")) return cardMid;
+      if (cardBottom.classList.contains("card-final")) return cardBottom;
+      return cardTop;
+    }
+
+    // клик по тексту тоже листает (после первого раскрытия)
+    predictionEl.addEventListener("click", () => {
+      if (mode !== "revealed") return;
+      const nextNum = pickNextUnseen();
+      revealDirectSameCard(getFinalCardEl(), nextNum);
+    });
+
+    startButton.addEventListener("click", () => {
+      startScreen.classList.remove("active");
+      readingScreen.classList.add("active");
+
+      predictionEl.textContent = "";
+      predictionEl.style.opacity = "0";
+      hintEl.style.opacity = "0";
+
+      mode = "idle";
+      initStack();
+      startShuffling();
+    });
+
+    restartButton.addEventListener("click", () => {
+      mode = "idle";
+
+      // на главной — следующая случайная анимация
+      nextRandomAnimation();
+
+      readingScreen.classList.remove("active");
+      startScreen.classList.add("active");
+
+      predictionEl.textContent = "";
+      predictionEl.style.opacity = "0";
+      hintEl.textContent = "Вытяни карту";
+      hintEl.style.opacity = "0";
+
+      resetAuthorLine();
+      resetRestart();
+    });
+
+    cardArea.addEventListener("click", (e) => {
+      if (mode !== "fan") return;
+      const cardEl = e.target.closest(".card");
+      if (!cardEl) return;
+      revealCard(cardEl);
+    });
+  </script>
+</body>
+</html>
