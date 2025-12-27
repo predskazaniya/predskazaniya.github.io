@@ -500,7 +500,7 @@
   </div>
 
   <script>
-    const totalCards = 27;
+    const totalCards = 46;
 
     // 3 строки: используем \n, а CSS (#prediction { white-space: pre-line; }) покажет переносы
 const predictions = {
@@ -530,8 +530,26 @@ const predictions = {
   24: "Все твои слёзы сломаются.",
   25: "Иногда нужно заблудиться, чтобы найти себя.",
   26: "Ты перестанешь держаться берега и станешь бесстрашным пловцом.",
-  27: "Не забывай про искру внутри тебя."
-};
+  27: "Не забывай про искру внутри тебя.",
+  28: "Все, что ты видишь, — тень; и ты сам — только тень, а реальности, которые отбрасывают их, живут в какой-то другой стране, озарённой духовным солнцем, которое никогда не заходит.",
+  29: "Самой холодной зимой ты узнаешь, что внутри тебя — непобедимое лето",
+  30: "Многое мы бы охотно бросили бы, если бы не боялись, что кто-нибудь это подберёт",
+  31: "Ты утонешь в ворохе личности и шорохе слов, но в наступившей тишине собственной слабости наконец почувствуешь под собой дно — и только тогда сможешь от него оттолкнуться.",
+  32: "Маринуя прошлое в стеклянной банке, не выйти из тёмного погреба на свет.",
+  33: "И выйдет солнце из-за туч,\nСогреет каменную землю.",
+  34: "Не ищи лучшее — ищи своё.",
+  35: "Мы пришли сюда валять дурака. Никому не позволяй убедить себя в обратном.",
+  36: "Случайно впустишь в дом привидение. Оно не будет мешать, но немножко погремит в полночь.",
+  37: "Выиграешь в борьбе за право тусоваться.",
+  38: "Великан заглянет к тебе в окошко, но пройдёт мимо. У него свои дела!",
+  39: "Карта не найдена. Судьба не отвечает.\nА может быть… всё в твоих руках?\nПеремешай колоду или проверь ментальное соединение.",
+  40: "Будь непреклонным. Раздосадованный крушением планов, не складывай оружия.",
+  41: "Страх сделает тебя пленником. Надежда даст тебе свободу.",
+  42: "И выйдет солнце из за туч, \nСогреет каменную землю.",
+  43: "Чувство без разума — не слишком питательная еда; но и разум, не смягчённый чувством, — горькая и сухая пища.",
+  44: "Не рычит во мраке ночи лев, и днём не рыкает, и развеется паутина крючкотворства, и рассветёт солнце, под лучами которого встретятся неожиданные друзья.",
+  45: "Каждый твой шаг ведёт к заветной сути, что внутри горит."
+ };
 
     const defaultCardImage = "https://predskazaniya.github.io/cards/card1.png";
     const cardImages = {
@@ -561,7 +579,25 @@ const predictions = {
       24: "https://predskazaniya.github.io/cards/tears.png",
       25: "https://predskazaniya.github.io/cards/veronika.png",
       26: "https://predskazaniya.github.io/cards/yulya.png",
-      27: "https://predskazaniya.github.io/cards/zakharova.png"
+      27: "https://predskazaniya.github.io/cards/zakharova.png",
+      28: "https://predskazaniya.github.io/cards/AloeVeranda.png",
+      29: "https://predskazaniya.github.io/cards/annat.PNG",
+      30: "https://predskazaniya.github.io/cards/Fatima.png",
+      31: "https://predskazaniya.github.io/cards/wilredar.jpg",
+      32: "https://predskazaniya.github.io/cards/gingerbread.jpg",
+      33: "https://predskazaniya.github.io/cards/glagoleva.png",
+      34: "https://predskazaniya.github.io/cards/Grofpel.png",
+      35: "https://predskazaniya.github.io/cards/Grofpel2.png",
+      36: "https://predskazaniya.github.io/cards/jan1el1.png",
+      37: "https://predskazaniya.github.io/cards/jan1el2.png",
+      38: "https://predskazaniya.github.io/cards/jan1el3.png",
+      39: "https://predskazaniya.github.io/cards/KatrinBars.PNG",
+      40: "https://predskazaniya.github.io/cards/olhva.png",
+      41: "https://predskazaniya.github.io/cards/papershinee.png",
+      42: "https://predskazaniya.github.io/cards/shaligina.png",
+      43: "https://predskazaniya.github.io/cards/shulga.png",
+      44: "https://predskazaniya.github.io/cards/Snormaeliu.png",
+      45: "https://predskazaniya.github.io/cards/spoutt.png"
     };
 
     const cardMeta = {
@@ -591,7 +627,25 @@ const predictions = {
       24: { name: "Сломанные слезы", url: "https://t.me/broken_tears" },
       25: { name: "✷ через тернии к звëздам ✷", url: "https://vk.com/cherez.terniii.k.zvezdam" },
       26: { name: "Юля", url: "https://t.me/heeyjudehello" },
-      27: { name: "Shurpo", url: "https://t.me/shurpo_art" }
+      27: { name: "Shurpo", url: "https://t.me/shurpo_art" },
+      28: { name: "Aloe Veranda", url: "https://t.me/aloeVeranda" },
+      29: { name: "мышова", url: "https://t.me/myshovaa" },
+      30: { name: "florenceme  (glutiam)", url: "https://vk.com/glutiam_art" },
+      31: { name: "wilredar", url: "https://t.me/wilredarius"},
+      32: { name: "gingerbread", url: "https://t.me/gingerb_ead" },
+      33: { name: "Ladislavica", url: "https://t.me/ladislavica" },
+      34: { name: "Natalia Grofpel", url: "https://instagram.com/nataliagrofpel?igshid=YmMyMTA2M2Y=" },
+      35: { name: "Natalia Grofpel", url: "https://instagram.com/nataliagrofpel?igshid=YmMyMTA2M2Y=" },
+      36: { name: "jan1el", url: "https://www.instagram.com/jan1el_art?igsh=cHZ5bWlpbmxnNDZ5&utm_source=qr" },
+      37: { name: "jan1el", url: "https://www.instagram.com/jan1el_art?igsh=cHZ5bWlpbmxnNDZ5&utm_source=qr" },
+      38: { name: "jan1el", url: "https://www.instagram.com/jan1el_art?igsh=cHZ5bWlpbmxnNDZ5&utm_source=qr" },
+      39: { name: "Katrin Bars", url: "https://vk.com/clubkatrinbars" },
+      40: { name: "olhva", url: "https://linktr.ee/olhva_" },
+      41: { name: "papershinee", url: "https://t.me/papershineee" },
+      42: { name: "Ladislavica", url: "https://t.me/ladislavica" },
+      43: { name: "Аня Шульга", url: "https://t.me/alienmatter" },
+      44: { name: "Snormælius", url: "https://vk.com/snormaelius" },
+      45: { name: "spoutt", url: "https://t.me/spoutttt" }
     };
 
     const startScreen   = document.getElementById("startScreen");
