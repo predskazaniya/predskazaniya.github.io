@@ -500,7 +500,7 @@
   </div>
 
   <script>
-    const totalCards = 45;
+    const totalCards = 48;
 
     // 3 строки: используем \n, а CSS (#prediction { white-space: pre-line; }) покажет переносы
 const predictions = {
@@ -548,7 +548,10 @@ const predictions = {
   42: "Папа мог ошибаться, ГуглМэпс тоже, бабушки врать. Заверни твое ремесло в эту жизненную дорогу и пусть оно откроет тебе новую.  Оставаться нельзя, скоро ночь.",
   43: "Чувство без разума — не слишком питательная еда; но и разум, не смягчённый чувством, — горькая и сухая пища.",
   44: "Не рычит во мраке ночи лев, и днём не рыкает, и развеется паутина крючкотворства, и рассветёт солнце, под лучами которого встретятся неожиданные друзья.",
-  45: "Каждый твой шаг ведёт к заветной сути, что внутри горит."
+  45: "Каждый твой шаг ведёт к заветной сути, что внутри горит.", 
+  46: "Куда бы ты ни шёл, не померкнут звёзды у тебя под ногами.",
+  47: "В результате, даже падая в никуда, обнаружишь себя на коне!✨", 
+  48: "Работая в аквариуме, необязательно общаться с людьми." 
  };
 
     const defaultCardImage = "https://predskazaniya.github.io/cards/card1.png";
@@ -597,7 +600,10 @@ const predictions = {
       42: "https://predskazaniya.github.io/cards/shaligina.png",
       43: "https://predskazaniya.github.io/cards/shulga.png",
       44: "https://predskazaniya.github.io/cards/Snormaeliu.png",
-      45: "https://predskazaniya.github.io/cards/spoutt.png"
+      45: "https://predskazaniya.github.io/cards/spoutt.png",
+      46: "https://predskazaniya.github.io/cards/lobacheva.png",
+      47: "https://predskazaniya.github.io/cards/Grebenshchikova.jpg",
+      48: "https://predskazaniya.github.io/cards/VeselovaDarya.jpg"
     };
 
     const cardMeta = {
@@ -645,7 +651,10 @@ const predictions = {
       42: { name: "Ульяна Шалыгина", url: "https://www.instagram.com/kholod31" },
       43: { name: "Аня Шульга", url: "https://t.me/alienmatter" },
       44: { name: "Snormælius", url: "https://vk.com/snormaelius" },
-      45: { name: "spoutt", url: "https://t.me/spoutttt" }
+      45: { name: "spoutt", url: "https://t.me/spoutttt" },
+      46: { name: "Юля Лобачёва", url: "https://t.me/uliazulia" },
+      47: { name: "Ира Гребенщикова", url: "https://www.behance.net/still_ira" },
+      48: { name: "где растет вешня", url: "https://t.me/kakoetomesto" }
     };
 
     const startScreen   = document.getElementById("startScreen");
@@ -670,7 +679,7 @@ const predictions = {
 
     // АНИМАЦИИ
     const animationBaseUrl = "https://predskazaniya.github.io/animations/anim";
-    const totalAnimations = 8; // anim01, anim02, anim03, anim04, anim05, anim06, anim07, anim08
+    const totalAnimations = 11; // anim01, anim02, anim03, anim04, anim05, anim06, anim07, anim08, anim09, anim10, anim11
     let currentAnimationIndex = 1;
 
     const animationAuthors = {
@@ -681,7 +690,10 @@ const predictions = {
       5: { name: "Ольга Мурашова", url: "https://vk.ru/club187872552" },  
       6: { name: "vsimmetry", url: "https://t.me/vsimmetry" },  
       7: { name: "Сломанные слезы", url: "https://t.me/broken_tears" },  
-      8: { name: "Katrin Bars ", url: "https://vk.com/clubkatrinbars" },  
+      8: { name: "Katrin Bars", url: "https://vk.com/clubkatrinbars" },
+      9: { name: "Natalia Grofpel", url: "t.me/anima_grofpel" },
+      10: { name: "Shurikovski", url: "https://t.me/shurikovski_zip" },
+      11: { name: "ninū", url: "https://t.me/tigrzapazuhoi" }
     };
 
     function formatIndex(num) {
