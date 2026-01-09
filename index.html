@@ -500,7 +500,7 @@
   </div>
 
   <script>
-    const totalCards = 48;
+    const totalCards = 51;
 
     // 3 строки: используем \n, а CSS (#prediction { white-space: pre-line; }) покажет переносы
 const predictions = {
@@ -603,7 +603,10 @@ const predictions = {
       45: "https://predskazaniya.github.io/cards/spoutt.png",
       46: "https://predskazaniya.github.io/cards/lobacheva.png",
       47: "https://predskazaniya.github.io/cards/Grebenshchikova.jpg",
-      48: "https://predskazaniya.github.io/cards/VeselovaDarya.JPG"
+      48: "https://predskazaniya.github.io/cards/VeselovaDarya.JPG",
+      49: "https://predskazaniya.github.io/cards/ChristophorVolk.JPG"
+      50: "https://predskazaniya.github.io/cards/VarvaraZankovich1.JPG"
+      51: "https://predskazaniya.github.io/cards/VarvaraZankovich2.JPG"
     };
 
     const cardMeta = {
@@ -654,7 +657,11 @@ const predictions = {
       45: { name: "spoutt", url: "https://t.me/spoutttt" },
       46: { name: "Юля Лобачёва", url: "https://t.me/uliazulia" },
       47: { name: "Ира Гребенщикова", url: "https://www.behance.net/still_ira" },
-      48: { name: "где растет вешня", url: "https://t.me/kakoetomesto" }
+      48: { name: "где растет вешня", url: "https://t.me/kakoetomesto" },
+      49: { name: "Христофор Волк", url: "https://t.me/christophorsoutrage" },
+      50: { name: "Varvara Zankovich", url: "https://www.instagram.com/varvara.zankovich?igsh=MWtucDljdDZjZ2JrYQ==" },
+      51: { name: "Varvara Zankovich", url: "https://www.instagram.com/varvara.zankovich?igsh=MWtucDljdDZjZ2JrYQ==" }
+      
     };
 
     const startScreen   = document.getElementById("startScreen");
@@ -679,7 +686,7 @@ const predictions = {
 
     // АНИМАЦИИ
     const animationBaseUrl = "https://predskazaniya.github.io/animations/anim";
-    const totalAnimations = 11; // anim01, anim02, anim03, anim04, anim05, anim06, anim07, anim08, anim09, anim10, anim11
+    const totalAnimations = 12; // anim01, anim02, anim03, anim04, anim05, anim06, anim07, anim08, anim09, anim10, anim11
     let currentAnimationIndex = 1;
 
     const animationAuthors = {
@@ -693,7 +700,8 @@ const predictions = {
       8: { name: "Katrin Bars", url: "https://vk.com/clubkatrinbars" },
       9: { name: "Natalia Grofpel", url: "https://t.me/anima_grofpel" },
       10: { name: "Shurikovski", url: "https://t.me/shurikovski_zip" },
-      11: { name: "ninū", url: "https://t.me/tigrzapazuhoi" }
+      11: { name: "ninū", url: "https://t.me/tigrzapazuhoi" },
+      11: { name: "Катерина Ермакова", url: "hhttps://t.me/ogo_yy" }
     };
 
     function formatIndex(num) {
